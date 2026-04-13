@@ -1,0 +1,484 @@
+/* Page-wide base styles (dark theme, default font, reset margins) */
+html, body {
+    height: 100%;
+    margin: 0;
+    background-color: #0A0D1A;
+    color: #e7ebf7;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 16px;
+}
+
+/* Make width/height calculations predictable for layout */
+* {
+    box-sizing: border-box;
+}
+
+/* Simple divider line between header and tabs */
+hr{
+    border: none;
+    border-top: 1px solid #1e2235;
+    margin: 1% 2% 2% 2%;
+}
+
+/* Top header container (logo + title/subtitle) */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 12px 2%;
+}
+
+/* Shield icon visual style */
+.logo {
+    font-size: 2.5rem;
+    background-color: #1b1f44;
+    border: 1px solid #333959;
+    border-radius: 12px;
+    padding: 6px 10px;
+    font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif;
+}
+
+/* Header title */
+.header-text h1 {
+    font-size: 1.5rem;
+    color: #ffffff;
+    margin: 0;
+}
+
+/* Header subtitle */
+.header-text p {
+    font-size: 0.85rem;
+    color: #7f8eb0;
+    margin: 2px 0 0 0;
+}
+
+/* Tabs row container */
+.tabs {
+    display: flex;
+    gap: 8px;
+    padding: 0 2% 14px 2%;
+    flex-wrap: wrap;
+}
+
+/* Tab buttons (default/inactive) */
+.tabButton {
+    background-color: #111525;
+    border: 1px solid #2a2f4a;
+    color: #7a8ab0;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+/* Hover feedback for tabs */
+.tabButton:hover {
+    background-color: #1b2040;
+    color: #cdd6f4;
+}
+
+/* Active tab highlight */
+.tabButton.active {
+    background-color: #1A1F43;
+    border-color: #5b5fc7;
+    color: #ffffff;
+}
+
+/* Shared "card" container used by input panels and result panel */
+.card {
+    background-color: #101829;
+    border: 1px solid #1e2235;
+    border-radius: 12px;
+    margin: 0 2% 16px 2%;
+    padding: 18px;
+}
+
+/* Small label at the top of each card to show which step it represents */
+.card-label {
+    font-size: 0.7rem;
+    color: #bdbdbd;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-left: 3px solid #3b3f8c;
+    padding-left: 8px;
+    margin-bottom: 12px;
+}
+
+/* Text input textarea styling */
+textarea {
+    width: 100%;
+    min-height: 110px;
+    background-color: #0d1120;
+    border: 1px solid #2a2f4a;
+    border-radius: 8px;
+    color: #cdd6f4;
+    font-size: 1rem;
+    padding: 10px;
+    resize: vertical;
+    font-family: inherit;
+    margin-bottom: 12px;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #5b5fc7;
+}
+
+/* Primary action button (Analyze) */
+.analyzeButton {
+    width: 100%;
+    padding: 14px;
+    background-color: #5b5fc7;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.analyzeButton:hover {
+    background-color: #4a4eb0;
+}
+
+/* Disabled visuals for interactive controls during requests/recording */
+.analyzeButton:disabled,
+.tabButton:disabled,
+.mic-circle:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* Microphone section: centers mic button and status */
+.mic-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    gap: 12px;
+}
+
+/* Microphone button (idle) */
+.mic-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background-color: #1b2040;
+    border: 2px solid #3b3f8c;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.mic-circle:hover {
+    background-color: #2a2f60;
+}
+
+/* Microphone button while recording: red + pulsing */
+.mic-circle.recording {
+    background-color: #7c1d1d;
+    border-color: #e74c3c;
+    animation: pulse 1s infinite;
+}
+
+/* Text under mic button (status) */
+#mic-status {
+    color: #7a8ab0;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Live transcript box in mic section */
+.transcript-box {
+    background-color: #0d1120;
+    border: 1px solid #2a2f4a;
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 60px;
+    color: #cdd6f4;
+    margin-bottom: 8px;
+}
+
+/* Audio upload: drag-and-drop zone container */
+.drop-zone {
+    border: 2px dashed #2a2f4a;
+    border-radius: 10px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 14px;
+}
+
+/* Hover feedback for drop zone */
+.drop-zone:hover {
+    border-color: #5b5fc7;
+    background-color: #13183a;
+}
+
+/* Drop zone when dragging file over it */
+.drop-zone.drag-hover {
+    border-color: #00ffcc;
+    background-color: #0d1a2a;
+}
+
+/* Icon in the middle of the drop zone */
+.musicIcon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* Drop zone main text */
+.drop-zone p {
+    color: #cdd6f4;
+    margin: 0 0 4px 0;
+}
+
+/* Drop zone supported extensions text */
+.drop-zone small {
+    color: #4b5273;
+    font-size: 0.8rem;
+}
+
+/* Result verdict box container (shared base style) */
+.verdict-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background-color: #101829;
+    border: 1px solid #2a2f4a;
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 1rem;
+}
+
+#verdictSection {
+    margin: 0 2% 16px 2%;
+}
+
+#verdictText {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Big score badge inside verdict box (right aligned) */
+.score-badge {
+    margin-left: auto;
+    background-color: #111525;
+    border: 1px solid #2a2f4a;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: bold;
+    color: #ffffff;
+    min-width: 88px;
+    text-align: center;
+}
+
+#scoreBadge {
+    display: none;
+}
+
+/* Verdict icon (emoji) size */
+.verdict-box #verdictIcon {
+    font-size: 2rem;
+}
+
+/* Verdict headline */
+#verdictLabel {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+/* Verdict subtext */
+#verdictSub {
+    font-size: 0.85rem;
+    color: #7a8ab0;
+    margin-top: 2px;
+}
+
+/* Verdict box theme for SCAM state */
+.verdict-box.scam {
+    border-color: #e74c3c;
+    background-color: #1f0a0a;
+}
+
+/* Verdict box theme for WARNING state */
+.verdict-box.warning {
+    border-color: #f1c40f;
+    background-color: #1f1a0a;
+}
+
+/* Verdict box theme for SAFE state */
+.verdict-box.safe {
+    border-color: #2ecc71;
+    background-color: #0a1f0a;
+}
+
+/* Token chip container */
+.token-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+    min-height: 30px;
+}
+
+/* Individual token chip */
+.token {
+    background-color: #1b2040;
+    border: 1px solid #2a2f4a;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 0.85rem;
+    color: #a0b0d0;
+}
+
+/* Feature list rows (OTP/Money/Urgency/Authority) */
+.feature-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #1e2235;
+    font-size: 0.9rem;
+}
+
+/* Feature "hit" badge default (no hit) */
+.hit-badge {
+    color: #4b5273;
+    font-size: 0.85rem;
+}
+
+/* Container behavior when we render multiple keyword chips */
+.hit-badge.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+    color: #4b5273;
+}
+
+/* Keyword chip used inside feature rows */
+.feature-chip {
+    background-color: #1b2040;
+    border: 1px solid #2a2f4a;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 0.8rem;
+    color: #cdd6f4;
+    white-space: nowrap;
+}
+
+/* Score labels above the progress bar */
+.score-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #7a8ab0;
+    margin-top: 16px;
+    margin-bottom: 6px;
+}
+
+/* Score bar background track */
+.score-bar-bg {
+    background-color: #1e2235;
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+/* Score bar fill (width is set by JS from backend score) */
+.score-bar {
+    height: 100%;
+    border-radius: 999px;
+    background-color: #2ecc71;
+    transition: width 0.5s ease;
+}
+
+/* Legend row under the score bar (color dots + factor weights) */
+.score-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: #7a8ab0;
+    flex-wrap: wrap;
+}
+
+/* Small colored dot used in the legend */
+.legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+/* Legend colors for the 4 UML factors */
+.otp-dot       { background-color: #e74c3c; }
+.money-dot     { background-color: #e67e22; }
+.urgency-dot   { background-color: #e74c8c; }
+.authority-dot { background-color: #f1c40f; }
+
+/* Bottom stats bar (ANALYZED / SCAM / SAFE / SCAM RATE) */
+.stats-bar {
+    display: flex;
+    gap: 12px;
+    padding: 0 2% 24px 2%;
+    flex-wrap: wrap;
+}
+
+/* Individual stat tile */
+.stat-card {
+    flex: 1;
+    min-width: 100px;
+    background-color: #111525;
+    border: 1px solid #1e2235;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+}
+
+/* Big number in stat tiles */
+.stat-num {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+/* Colors for stat numbers */
+.stat-num.red    { color: #e74c3c; }
+.stat-num.green  { color: #2ecc71; }
+.stat-num.purple { color: #9b59b6; }
+
+/* Small label under each stat number */
+.stat-label {
+    font-size: 0.7rem;
+    color: #4b5273;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 4px;
+}
+
+/* Shared error message box used in each section */
+.errorBox {
+    margin-top: 12px;
+    background-color: #2a1f00;
+    border: 1px solid #7a5a00;
+    border-radius: 8px;
+    color: #fbbf24;
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+/* Mic recording animation */
+@keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.6); }
+    70%  { box-shadow: 0 0 0 14px rgba(231, 76, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}

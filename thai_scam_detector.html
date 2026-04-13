@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th-TH">
+
+<head>
+    <title>Thai Scam Call Detector</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js"></script>
+</head>
+<body>
+<div class="header">
+    <span class="logo">🛡</span>
+    <div class="header-text">
+        <h1>Thai Scam Call Detector</h1>
+        <p>ระบบตรวจจับการโทรหลอกลวงด้วยการประมวลผลภาษาธรรมชาติ</p>
+    </div>
+</div>
+
+<hr>
+
+<div class="tabs">
+    <button id="textButton" class="tabButton" onclick="showSection('text')">⌨ Text Input</button>
+    <button id="liveButton" class="tabButton" onclick="showSection('live')">🎤 Microphone</button>
+    <button id="fileButton" class="tabButton" onclick="showSection('file')">📁 Upload Audio</button>
+</div>
+
+<div id="textSection" class="card">
+    <div class="card-label">STEP 1-2 - TEXT / STT TRANSCRIPT</div>
+    <textarea id="textInput" placeholder="พิมพ์ข้อความภาษาไทยที่ต้องการวิเคราะห์ (จำลอง Speech-to-Text output)"></textarea>
+    <button id="btnAnalyzeText" class="analyzeButton" onclick="analyzeText()">วิเคราะห์ข้อความ</button>
+    <div id="textError" class="errorBox" style="display:none;"></div>
+</div>
+
+<div id="liveSection" class="card" style="display:none;">
+    <div class="card-label">WEB SPEECH API - CHROME / EDGE (ภาษาไทย TH-TH)</div>
+    <div class="mic-area">
+        <button id="micButton" class="mic-circle" onclick="toggleMic()">🎤</button>
+        <p id="mic-status">กดปุ่มเพื่อเริ่มอัดเสียง</p>
+    </div>
+    <div id="liveTranscript" class="transcript-box">รอเสียง...</div>
+    <div id="micError" class="errorBox" style="display:none;"></div>
+</div>
+
+<div id="fileSection" class="card" style="display:none;">
+    <div class="card-label">UPLOAD AUDIO FILE - .WAV / .MP3 / .OGG / .M4A</div>
+    <div id="dropZone" class="drop-zone" onclick="document.getElementById('fileInput').click()">
+        <span class="musicIcon">🎵</span>
+        <p id="dropZoneText">ลากไฟล์มาวางหรือคลิกเพื่อเลือกไฟล์</p>
+        <small>รองรับ .wav, .mp3, .ogg, .m4a</small>
+    </div>
+    <input type="file" id="fileInput" accept=".wav,.mp3,.ogg,.m4a" style="display:none;" />
+    <div id="fileError" class="errorBox" style="display:none;"></div>
+</div>
+
+<div id="verdictSection" class="verdict-box">
+    <span id="verdictIcon">🔍</span>
+    <div id="verdictText">
+        <div id="verdictLabel">รอการวิเคราะห์</div>
+        <div id="verdictSub">เลือกวิธีป้อนข้อมูลแล้วเริ่มวิเคราะห์</div>
+    </div>
+    <div id="scoreBadge" class="score-badge">-</div>
+</div>
+
+<div id="resultSection" class="card">
+    <div class="card-label">STEP 3 - TOKENIZATION</div>
+    <div id="tokenDisplay" class="token-display">-</div>
+
+    <div class="card-label">STEP 4 - DETECTED FEATURES</div>
+    <div class="feature-row">
+        <span>OTP / รหัส</span>
+        <span id="hitOtp" class="hit-badge">-</span>
+    </div>
+    <div class="feature-row">
+        <span>โอนเงิน / ธุรกรรม</span>
+        <span id="hitMoney" class="hit-badge">-</span>
+    </div>
+    <div class="feature-row">
+        <span>ความเร่งด่วน</span>
+        <span id="hitUrgency" class="hit-badge">-</span>
+    </div>
+    <div class="feature-row">
+        <span>อ้างอำนาจ</span>
+        <span id="hitAuthority" class="hit-badge">-</span>
+    </div>
+</div>
+
+<div id="scoreSection" class="card">
+    <div class="card-label">STEP 5 - KEYWORD SCORING</div>
+    <div class="score-labels">
+        <span>ปลอดภัย (0)</span>
+        <span>Scam Score</span>
+        <span>อันตราย (100)</span>
+    </div>
+    <div class="score-bar-bg">
+        <div id="scoreBar" class="score-bar" style="width:0%"></div>
+    </div>
+    <div class="score-legend">
+        <span class="legend-dot otp-dot"></span> OTP/รหัส (+35)
+        <span class="legend-dot money-dot"></span> โอนเงิน (+30)
+        <span class="legend-dot urgency-dot"></span> ความเร่งด่วน (+20)
+        <span class="legend-dot authority-dot"></span> อ้างอำนาจ (+15)
+    </div>
+    <div id="resultError" class="errorBox" style="display:none;"></div>
+</div>
+
+<div class="stats-bar">
+    <div class="stat-card">
+        <div id="stat-analyzed" class="stat-num">0</div>
+        <div class="stat-label">ANALYZED</div>
+    </div>
+    <div class="stat-card">
+        <div id="stat-scam" class="stat-num red">0</div>
+        <div class="stat-label">SCAM</div>
+    </div>
+    <div class="stat-card">
+        <div id="stat-safe" class="stat-num green">0</div>
+        <div class="stat-label">SAFE</div>
+    </div>
+    <div class="stat-card">
+        <div id="stat-rate" class="stat-num purple">-</div>
+        <div class="stat-label">SCAM RATE</div>
+    </div>
+</div>
+
+</body>
+
+</html>
