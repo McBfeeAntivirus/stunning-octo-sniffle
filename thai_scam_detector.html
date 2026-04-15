@@ -19,6 +19,20 @@
 
 <hr>
 
+<div class="pipeline" id="pipeline">
+    <div class="pipe-step" id="ps-1"><span class="pipe-dot"></span>Audio Input</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" id="ps-2"><span class="pipe-dot"></span>Speech-to-Text</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" id="ps-3"><span class="pipe-dot"></span>Tokenize</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" id="ps-4"><span class="pipe-dot"></span>Feature Extract</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" id="ps-5"><span class="pipe-dot"></span>Classify</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" id="ps-6"><span class="pipe-dot"></span>Result</div>
+</div>
+
 <div class="tabs">
     <button id="textButton" class="tabButton" onclick="showSection('text')">⌨ Text Input</button>
     <button id="liveButton" class="tabButton" onclick="showSection('live')">🎤 Microphone</button>
@@ -28,6 +42,15 @@
 <div id="textSection" class="card">
     <div class="card-label">STEP 1-2 - TEXT / STT TRANSCRIPT</div>
     <textarea id="textInput" placeholder="พิมพ์ข้อความภาษาไทยที่ต้องการวิเคราะห์ (จำลอง Speech-to-Text output)"></textarea>
+    <div class="examples">
+        <span class="examples-label">ตัวอย่าง:</span>
+        <button class="example-btn scam" onclick="setExample(0)">OTP</button>
+        <button class="example-btn scam" onclick="setExample(1)">โอนเงิน</button>
+        <button class="example-btn scam" onclick="setExample(2)">ตำรวจ</button>
+        <button class="example-btn scam" onclick="setExample(3)">ธนาคาร</button>
+        <button class="example-btn ok" onclick="setExample(4)">ปกติ 1</button>
+        <button class="example-btn ok" onclick="setExample(5)">ปกติ 2</button>
+    </div>
     <button id="btnAnalyzeText" class="analyzeButton" onclick="analyzeText()">วิเคราะห์ข้อความ</button>
     <div id="textError" class="errorBox" style="display:none;"></div>
 </div>
@@ -64,7 +87,7 @@
 
 <div id="resultSection" class="card">
     <div class="card-label">STEP 3 - TOKENIZATION</div>
-    <div id="tokenDisplay" class="token-display">-</div>
+    <div id="tokenDisplay" class="token-display">รอข้อความ...</div>
 
     <div class="card-label">STEP 4 - DETECTED FEATURES</div>
     <div class="feature-row">
@@ -87,6 +110,7 @@
 
 <div id="scoreSection" class="card">
     <div class="card-label">STEP 5 - KEYWORD SCORING</div>
+
     <div class="score-labels">
         <span>ปลอดภัย (0)</span>
         <span>Scam Score</span>
@@ -100,11 +124,13 @@
         <span class="legend-dot money-dot"></span> โอนเงิน (+30)
         <span class="legend-dot urgency-dot"></span> ความเร่งด่วน (+20)
         <span class="legend-dot authority-dot"></span> อ้างอำนาจ (+15)
+        <span class="threshold-hint">≥ 60 SCAM | &gt; 35 WARNING</span>
     </div>
     <div id="resultError" class="errorBox" style="display:none;"></div>
 </div>
 
 <div class="stats-bar">
+
     <div class="stat-card">
         <div id="stat-analyzed" class="stat-num">0</div>
         <div class="stat-label">ANALYZED</div>
@@ -114,13 +140,42 @@
         <div class="stat-label">SCAM</div>
     </div>
     <div class="stat-card">
+        <div id="stat-warning" class="stat-num amber">0</div>
+        <div class="stat-label">WARNING</div>
+    </div>
+    <div class="stat-card">
         <div id="stat-safe" class="stat-num green">0</div>
         <div class="stat-label">SAFE</div>
     </div>
+
     <div class="stat-card">
         <div id="stat-rate" class="stat-num purple">-</div>
         <div class="stat-label">SCAM RATE</div>
     </div>
+</div>
+
+<div class="card dataset-card">
+    <div class="card-label">DATASET (CSV PREVIEW)</div>
+    <div class="dataset-table-wrap">
+        <table class="dataset-table">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>transcript</th>
+                <th>label</th>
+                <th>score</th>
+                <th>source</th>
+                <th>hits</th>
+            </tr>
+            </thead>
+            <tbody id="csv-body">
+            <tr>
+                <td colspan="6" class="dataset-empty">ยังไม่มีข้อมูล</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <button id="btnExportCsv" class="exportButton" onclick="exportCSV()">⬇ Export CSV</button>
 </div>
 
 </body>

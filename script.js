@@ -17,14 +17,36 @@ function showSection(section) {
   if (sectionButton) sectionButton.classList.add("active");
 }
 
+// Backend base URL (the Node/Express backend defaults to http://localhost:5000)
+var API_BASE_URL =
+  (typeof window !== "undefined" && window.API_BASE_URL) ||
+  (typeof localStorage !== "undefined" && localStorage.getItem("API_BASE_URL")) ||
+  "http://localhost:5000";
+
 // ------------------------------------------------------------
 // UI state (disable controls while requesting/processing)
 // ------------------------------------------------------------
 var isBusy = false;
 var recognition = null;
 var isRecording = false;
-var stats = { analyzed: 0, scam: 0, safe: 0 };
+var stats = { analyzed: 0, scam: 0, warning: 0, safe: 0 };
 var els = null;
+
+var EXAMPLES = [
+  "กรุณาบอกรหัส OTP ตอนนี้เพื่อยืนยันบัญชี",
+  "คุณต้องโอนเงิน 50000 บาทภายใน 10 นาทีไม่งั้นบัญชีถูกระงับ",
+  "นี่คือตำรวจไซเบอร์ คุณต้องให้ข้อมูลบัญชีธนาคารด่วนมาก",
+  "ธนาคารกสิกรไทยแจ้งว่าบัญชีของคุณถูกระงับ กรุณายืนยัน PIN ทันที",
+  "วันนี้ไปกินข้าวกันไหม",
+  "สวัสดีครับ คุณสะดวกคุยตอนบ่ายสามได้ไหมครับ"
+];
+
+function setExample(i) {
+  var e = getEls();
+  if (!e.textInput) return;
+  e.textInput.value = EXAMPLES[i] || "";
+  showSection("text");
+}
 
 // Cache DOM elements used frequently during rendering, for optimization.
 function getEls() {
@@ -53,10 +75,34 @@ function getEls() {
     scoreBar: document.getElementById("scoreBar"),
     statAnalyzed: document.getElementById("stat-analyzed"),
     statScam: document.getElementById("stat-scam"),
+    statWarning: document.getElementById("stat-warning"),
     statSafe: document.getElementById("stat-safe"),
     statRate: document.getElementById("stat-rate")
   };
   return els;
+}
+
+function actPL(step) {
+  for (var i = 1; i <= 6; i++) {
+    var el = document.getElementById("ps-" + i);
+    if (!el) continue;
+    el.className = "pipe-step" + (i < step ? " done" : i === step ? " active" : "");
+  }
+}
+
+function resetPL() {
+  for (var i = 1; i <= 6; i++) {
+    var el = document.getElementById("ps-" + i);
+    if (el) el.className = "pipe-step";
+  }
+}
+
+function setPipelineResultClass(is_scam, is_warning) {
+  var el = document.getElementById("ps-6");
+  if (!el) return;
+  if (is_scam) el.className = "pipe-step result-scam";
+  else if (is_warning) el.className = "pipe-step result-warning";
+  else el.className = "pipe-step result-ok";
 }
 
 function setBusyState(busy) {
@@ -73,7 +119,7 @@ function setBusyState(busy) {
 }
 
 function hideAllErrors() {
-  var ids = ["textError", "micError", "fileError", "resultError"]; 
+  var ids = ["textError", "micError", "fileError", "resultError"];
   for (var i = 0; i < ids.length; i++) {
     var el = document.getElementById(ids[i]);
     if (el) {
@@ -91,10 +137,10 @@ function showError(id, message) {
 }
 
 // ------------------------------------------------------------
-// POST JSON helper (same-origin backend)
+// POST JSON helper (backend API)
 // ------------------------------------------------------------
 async function postJson(url, payload) {
-  var response = await fetch(url, {
+  var response = await fetch(API_BASE_URL + url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
@@ -128,15 +174,19 @@ async function analyzeText() {
   hideAllErrors();
   var e = getEls();
   var text = ((e.textInput && e.textInput.value) || "").trim();
+
   if (!text) {
     showError("textError", "กรุณาพิมพ์ข้อความก่อน");
     return;
   }
 
   setBusyState(true);
+  resetPL();
+  actPL(4);
   try {
-    var data = await postJson("/analyze", { text: text });
+    var data = await postJson("/analyze", { text: text, source: "text-input" });
     renderAnalysisResult(data);
+    fetchAndRenderDataset();
   } catch (e) {
     showError("textError", (e && e.message ? e.message : String(e)));
   } finally {
@@ -197,9 +247,12 @@ function toggleMic() {
     if (!text || text === "รอเสียง...") return;
 
     setBusyState(true);
+    resetPL();
+    actPL(4);
     try {
-      var data = await postJson("/analyze", { text: text });
+      var data = await postJson("/analyze", { text: text, source: "webspeech" });
       renderAnalysisResult(data);
+      fetchAndRenderDataset();
     } catch (e) {
       showError("micError", (e && e.message ? e.message : String(e)));
     } finally {
@@ -254,7 +307,7 @@ async function handleAudioFile(file) {
   hideAllErrors();
   if (!file) return;
 
-  var allowed = ["audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp3", "audio/ogg", "audio/mp4", "audio/x-m4a", "audio/m4a"]; 
+  var allowed = ["audio/wav", "audio/x-wav", "audio/mpeg", "audio/mp3", "audio/ogg", "audio/mp4", "audio/x-m4a", "audio/m4a"];
   var name = (file.name || "").toLowerCase();
   var okExt = name.endsWith(".wav") || name.endsWith(".mp3") || name.endsWith(".ogg") || name.endsWith(".m4a");
   var okType = !file.type || allowed.indexOf(file.type) !== -1;
@@ -268,10 +321,12 @@ async function handleAudioFile(file) {
   if (dzText) dzText.innerText = "📄 " + file.name;
 
   setBusyState(true);
+  resetPL();
+  actPL(1);
   try {
     var formData = new FormData();
-    formData.append("file", file);
-    var response = await fetch("/transcribe", { method: "POST", body: formData });
+    formData.append("audio", file);
+    var response = await fetch(API_BASE_URL + "/transcribe", { method: "POST", body: formData });
 
     var contentType = response.headers.get("content-type") || "";
     var data;
@@ -288,9 +343,11 @@ async function handleAudioFile(file) {
 
     if (data && typeof data === "object" && data.tokens) {
       renderAnalysisResult(data);
+      fetchAndRenderDataset();
     } else if (data && typeof data === "object" && data.transcript) {
-      var analyzed = await postJson("/analyze", { text: data.transcript });
+      var analyzed = await postJson("/analyze", { text: data.transcript, source: "upload" });
       renderAnalysisResult(analyzed);
+      fetchAndRenderDataset();
     } else {
       throw new Error("Unexpected /transcribe response: " + JSON.stringify(data));
     }
@@ -340,31 +397,21 @@ function renderAnalysisResult(data) {
   if (isNaN(score)) score = 0;
   var verdict = parseVerdict(data);
 
+  resetPL();
+  actPL(6);
+  setPipelineResultClass(Boolean(verdict && verdict.is_scam), Boolean(verdict && verdict.isWarning));
+
   displayResults(tokens, hits, score, verdict);
 }
 
 function parseVerdict(data) {
-  // Backend may return verdict fields either top-level or nested under `data.verdict`.
-  var v = (data && typeof data.verdict === "object" && data.verdict) ? data.verdict : data;
-
-  var hasIsScam = v && Object.prototype.hasOwnProperty.call(v, "isScam");
-  var hasIsScamSnake = v && Object.prototype.hasOwnProperty.call(v, "is_scam");
-  var isScam = false;
-  if (hasIsScam) isScam = Boolean(v.isScam);
-  else if (hasIsScamSnake) isScam = Boolean(v.is_scam);
-
-  var isWarning = false;
-  if (v && Object.prototype.hasOwnProperty.call(v, "isWarning")) {
-    isWarning = Boolean(v.isWarning);
+  if (!data || typeof data !== "object") {
+    return { is_scam: false, isWarning: false, label: "normal" };
   }
 
-  var label = (v && typeof v.label === "string") ? v.label : "";
-
-  if (!label) {
-    if (isScam) label = "scam";
-    else if (isWarning) label = "warning";
-    else label = "normal";
-  }
+  var isScam = Boolean(data.is_scam);
+  var isWarning = Boolean(data.is_warning);
+  var label = typeof data.label === "string" ? data.label : "normal";
 
   return { is_scam: isScam, isWarning: isWarning, label: label };
 }
@@ -405,7 +452,7 @@ function displayResults(tokens, hits, score, verdict) {
     scoreBadge.style.display = "block";
   }
 
-  renderTokens(tokens);
+  renderTokens(tokens, hits);
 
   renderHitChips("hitOtp", hits.otp);
   renderHitChips("hitMoney", hits.money);
@@ -424,19 +471,29 @@ function displayResults(tokens, hits, score, verdict) {
     }
   }
 
-  if (e.resultSection) e.resultSection.scrollIntoView({ behavior: "smooth" });
-  updateStats(Boolean(verdict && verdict.is_scam));
+  updateStats(Boolean(verdict && verdict.is_scam), Boolean(verdict && verdict.isWarning));
 }
 
-function renderTokens(tokens) {
+function renderTokens(tokens, hits) {
   var e = getEls();
   var tokenDisplay = e.tokenDisplay;
   if (!tokenDisplay) return;
 
   tokenDisplay.innerHTML = "";
   if (!tokens || tokens.length === 0) {
-    tokenDisplay.innerText = "-";
+    tokenDisplay.innerText = "รอข้อความ...";
     return;
+  }
+
+  var h = normalizeHits(hits);
+  var tokenToCat = {};
+  var catKeys = ["otp", "money", "urgency", "authority"];
+  for (var c = 0; c < catKeys.length; c++) {
+    var k = catKeys[c];
+    var arr = h && h[k] ? h[k] : [];
+    for (var j = 0; j < arr.length; j++) {
+      tokenToCat[String(arr[j])] = k;
+    }
   }
 
   var maxTokens = 50;
@@ -445,7 +502,13 @@ function renderTokens(tokens) {
   for (var i = 0; i < count; i++) {
     var span = document.createElement("span");
     span.className = "token";
-    span.innerText = String(tokens[i]);
+    var t = String(tokens[i]);
+    span.innerText = t;
+    var cat = tokenToCat[t];
+    if (cat === "otp") span.classList.add("hit-otp");
+    else if (cat === "money") span.classList.add("hit-money");
+    else if (cat === "urgency") span.classList.add("hit-urgency");
+    else if (cat === "authority") span.classList.add("hit-authority");
     frag.appendChild(span);
   }
 
@@ -480,22 +543,99 @@ function renderHitChips(elementId, matches) {
   }
 }
 
-function updateStats(is_scam) {
+function updateStats(is_scam, is_warning) {
   stats.analyzed++;
   if (is_scam) stats.scam++;
+  else if (is_warning) stats.warning++;
   else stats.safe++;
 
   var e = getEls();
   if (e.statAnalyzed) e.statAnalyzed.innerText = stats.analyzed;
   if (e.statScam) e.statScam.innerText = stats.scam;
+  if (e.statWarning) e.statWarning.innerText = stats.warning;
   if (e.statSafe) e.statSafe.innerText = stats.safe;
 
   var rate = stats.analyzed > 0 ? Math.round((stats.scam / stats.analyzed) * 100) + "%" : "-";
   if (e.statRate) e.statRate.innerText = rate;
 }
 
+async function fetchAndRenderDataset() {
+  var tbody = document.getElementById("csv-body");
+  if (!tbody) return;
+  try {
+    var res = await fetch(API_BASE_URL + "/dataset");
+    var data = await res.json();
+    if (data && typeof data === "object" && Array.isArray(data.rows)) {
+      renderDatasetTable(data.rows);
+    } else if (Array.isArray(data)) {
+      renderDatasetTable(data);
+    } else {
+      renderDatasetTable([]);
+    }
+  } catch (e) {
+    renderDatasetTable([]);
+  }
+}
+
+async function resetBackendDatasetOnLoad() {
+  try {
+    await fetch(API_BASE_URL + "/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+  } catch (e) {
+    // ignore
+  }
+}
+
+function renderDatasetTable(rows) {
+  var tbody = document.getElementById("csv-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    var tr0 = document.createElement("tr");
+    var td0 = document.createElement("td");
+    td0.colSpan = 6;
+    td0.className = "dataset-empty";
+    td0.innerText = "ยังไม่มีข้อมูล";
+    tr0.appendChild(td0);
+    tbody.appendChild(tr0);
+    return;
+  }
+
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i] || {};
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + escapeHtml(String(r.id == null ? "" : r.id)) + "</td>" +
+      "<td>" + escapeHtml(String(r.transcript == null ? "" : r.transcript)) + "</td>" +
+      "<td>" + escapeHtml(String(r.label == null ? "" : r.label)) + "</td>" +
+      "<td>" + escapeHtml(String(r.score == null ? "" : r.score)) + "</td>" +
+      "<td>" + escapeHtml(String(r.source == null ? "" : r.source)) + "</td>" +
+      "<td>" + escapeHtml(String(r.hits == null ? "" : r.hits)) + "</td>";
+    tbody.appendChild(tr);
+  }
+}
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function exportCSV() {
+  window.open(API_BASE_URL + "/export", "_blank");
+}
+
 window.addEventListener("load", function() {
   getEls();
   setupFileUpload();
+  resetBackendDatasetOnLoad().then(fetchAndRenderDataset);
+  resetPL();
   showSection("text");
 });

@@ -85,6 +85,88 @@ hr{
     color: #ffffff;
 }
 
+/* Pipeline animation bar */
+.pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0 2% 14px 2%;
+    flex-wrap: wrap;
+    overflow-x: hidden;
+}
+
+.pipe-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    background-color: #111525;
+    border: 1px solid #1e2235;
+    color: #7a8ab0;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.pipe-step.active {
+    background-color: rgba(0, 64, 133, 0.18);
+    border-color: rgba(0, 64, 133, 0.35);
+    color: #7fc4ff;
+}
+
+.pipe-step.done {
+    background-color: rgba(91, 95, 199, 0.18);
+    border-color: rgba(91, 95, 199, 0.35);
+    color: #cdd6f4;
+}
+
+.pipe-step.result-scam {
+    background-color: rgba(231, 76, 60, 0.12);
+    border-color: rgba(231, 76, 60, 0.4);
+    color: #e74c3c;
+}
+
+.pipe-step.result-warning {
+    background-color: rgba(241, 196, 15, 0.12);
+    border-color: rgba(241, 196, 15, 0.4);
+    color: #f1c40f;
+}
+
+.pipe-step.result-ok {
+    background-color: rgba(46, 204, 113, 0.12);
+    border-color: rgba(46, 204, 113, 0.4);
+    color: #2ecc71;
+}
+
+.pipe-arrow {
+    color: #4b5273;
+    font-size: 1rem;
+    padding: 0 6px;
+    flex-shrink: 0;
+}
+
+.pipe-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: currentColor;
+}
+
+@media (max-width: 600px) {
+    .pipe-step {
+        padding: 6px 10px;
+        font-size: 0.7rem;
+    }
+
+    .pipe-arrow {
+        padding: 0 4px;
+        font-size: 0.9rem;
+    }
+}
+
 /* Shared "card" container used by input panels and result panel */
 .card {
     background-color: #101829;
@@ -123,6 +205,47 @@ textarea {
 textarea:focus {
     outline: none;
     border-color: #5b5fc7;
+}
+
+/* Examples row */
+.examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.examples-label {
+    font-size: 0.8rem;
+    color: #4b5273;
+}
+
+.example-btn {
+    background-color: #111525;
+    border: 1px solid #2a2f4a;
+    color: #7a8ab0;
+    padding: 5px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.example-btn:hover {
+    background-color: #1b2040;
+    border-color: #5b5fc7;
+    color: #cdd6f4;
+}
+
+.example-btn.scam {
+    border-color: rgba(231, 76, 60, 0.5);
+    color: #e74c3c;
+}
+
+.example-btn.ok {
+    border-color: rgba(46, 204, 113, 0.5);
+    color: #2ecc71;
 }
 
 /* Primary action button (Analyze) */
@@ -336,6 +459,35 @@ textarea:focus {
     color: #a0b0d0;
 }
 
+/* Token highlight by hit category (match backend demo semantics) */
+.token.hit-otp {
+    background-color: rgba(231, 76, 60, 0.18);
+    border-color: rgba(231, 76, 60, 0.45);
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.token.hit-money {
+    background-color: rgba(230, 126, 34, 0.16);
+    border-color: rgba(230, 126, 34, 0.45);
+    color: #e67e22;
+    font-weight: 600;
+}
+
+.token.hit-urgency {
+    background-color: rgba(231, 76, 140, 0.14);
+    border-color: rgba(231, 76, 140, 0.4);
+    color: #e74c8c;
+    font-weight: 600;
+}
+
+.token.hit-authority {
+    background-color: rgba(241, 196, 15, 0.14);
+    border-color: rgba(241, 196, 15, 0.4);
+    color: #f1c40f;
+    font-weight: 600;
+}
+
 /* Feature list rows (OTP/Money/Urgency/Authority) */
 .feature-row {
     display: flex;
@@ -452,6 +604,7 @@ textarea:focus {
 /* Colors for stat numbers */
 .stat-num.red    { color: #e74c3c; }
 .stat-num.green  { color: #2ecc71; }
+.stat-num.amber  { color: #f1c40f; }
 .stat-num.purple { color: #9b59b6; }
 
 /* Small label under each stat number */
@@ -461,6 +614,71 @@ textarea:focus {
     letter-spacing: 0.1em;
     text-transform: uppercase;
     margin-top: 4px;
+}
+
+/* Threshold hint */
+.threshold-hint {
+    margin-left: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    color: #4b5273;
+}
+
+/* Dataset preview */
+.dataset-card {
+    overflow: hidden;
+}
+
+.dataset-table-wrap {
+    overflow-x: auto;
+}
+
+.dataset-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.dataset-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background-color: #111525;
+    color: #4b5273;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.7rem;
+    border-bottom: 1px solid #1e2235;
+    white-space: nowrap;
+}
+
+.dataset-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #1e2235;
+    color: #7a8ab0;
+    vertical-align: top;
+}
+
+.dataset-empty {
+    color: #4b5273;
+    text-align: center;
+    padding: 18px 12px;
+}
+
+.exportButton {
+    margin-top: 12px;
+    background-color: #111525;
+    border: 1px solid #2a2f4a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #7a8ab0;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.exportButton:hover {
+    background-color: #1b2040;
+    border-color: #5b5fc7;
+    color: #cdd6f4;
 }
 
 /* Shared error message box used in each section */
