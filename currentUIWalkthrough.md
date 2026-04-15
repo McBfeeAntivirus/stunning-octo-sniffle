@@ -30,6 +30,13 @@ This HTML file is the source of truth for:
     - CSS styling in `styles.css`
     - JS bulk-selection (`querySelectorAll`) to remove the `.active` class and to disable tabs while busy.
 
+### 1.1.1 Pipeline bar (UI-only)
+
+Above the tabs, the page includes a 6-step “pipeline” bar:
+
+- Step elements use IDs: `ps-1` … `ps-6`
+- JavaScript toggles CSS classes (`active`, `done`, `result-scam`, `result-warning`, `result-ok`) to create a simple progress / status effect.
+
 ### 1.2 Sections
 
 Each input method has a section `<div id="...Section">`:
@@ -51,6 +58,11 @@ Key elements:
 - `id="textInput"`: `<textarea>` used to read the user’s text
 - `id="btnAnalyzeText"`: analyze button, disabled when busy
 - `id="textError"`: error box for text mode
+
+Additional elements:
+
+- Example buttons row ("ตัวอย่าง:")
+  - Each button calls `setExample(i)` to quickly populate the textarea with a pre-defined sample.
 
 ### 1.4 Microphone section
 
@@ -80,6 +92,8 @@ Key elements:
 
 - Tokens:
   - `id="tokenDisplay"` is filled with `<span class="token">...</span>`
+  - Tokens may receive extra classes for highlighting:
+    - `hit-otp`, `hit-money`, `hit-urgency`, `hit-authority`
 
 - Feature hits:
   - `id="hitOtp"`, `id="hitMoney"`, `id="hitUrgency"`, `id="hitAuthority"`
@@ -89,6 +103,13 @@ Key elements:
 
 - Overall result errors:
   - `id="resultError"`
+
+### 1.7 Dataset preview + Export CSV
+
+At the bottom of the page there is a dataset preview table used for demo/debugging:
+
+- `id="csv-body"` is the `<tbody>` that JS populates with rows from backend `GET /dataset`.
+- The Export button calls `exportCSV()` which opens backend `GET /export`.
 
 ---
 
@@ -175,6 +196,19 @@ Controls affected:
 - `micButton`
 - all `.tabButton` elements
 
+### 3.2.1 Example messages: `EXAMPLES` and `setExample(i)`
+
+Purpose:
+
+- Provide quick demo/test inputs under the text textarea.
+
+Behavior:
+
+- `EXAMPLES` is an array of sample Thai messages.
+- `setExample(i)` sets `#textInput.value` to the sample and switches the UI back to the Text tab.
+
+This is UI-only; it does not call the backend by itself.
+
 ### 3.3 Error helpers: `hideAllErrors()` and `showError(id, message)`
 
 - `hideAllErrors()` clears and hides:
@@ -194,6 +228,7 @@ Purpose:
 Behavior:
 
 - Always POSTs with `Content-Type: application/json`.
+- Uses `API_BASE_URL` and calls `fetch(API_BASE_URL + url, ...)`.
 - Reads response as JSON if `content-type` includes `application/json`; otherwise reads text.
 - If `!response.ok`, throws a descriptive `Error`.
 - If response body is text on success, throws `Expected JSON but got text`.
@@ -213,8 +248,9 @@ Flow:
 2. read textarea value
 3. if empty → `showError("textError", ...)`
 4. `setBusyState(true)`
-5. call `postJson("/analyze", { text })`
+5. call `postJson("/analyze", { text, source: "text-input" })`
 6. `renderAnalysisResult(data)`
+7. refresh dataset preview via `fetchAndRenderDataset()`
 7. `finally { setBusyState(false) }`
 
 ### 3.6 Live mic: `toggleMic()`
@@ -245,7 +281,7 @@ Handlers:
 - `recognition.onend`
   - reads final transcript from `#liveTranscript`
   - if empty/placeholder → return
-  - calls `/analyze` with `{ text: transcript }`
+  - calls `/analyze` with `{ text: transcript, source: "webspeech" }`
 
 Start logic:
 
@@ -278,13 +314,15 @@ Purpose:
 Key details:
 
 - Upload is `multipart/form-data` via `FormData`:
-  - `formData.append("file", file)`
+  - `formData.append("audio", file)`
 
 Response handling:
 
 - If response is not JSON, throw an error including the returned text.
 - If JSON has `tokens`, treat it as analysis and render.
 - Else if JSON has `transcript`, call `/analyze` and render the returned analysis.
+
+After rendering, the frontend refreshes the dataset preview via `fetchAndRenderDataset()`.
 
 ### 3.8 Normalization: `normalizeHits(hits)`
 
@@ -319,12 +357,19 @@ Then calls:
 
 - `displayResults(tokens, hits, score, verdict)`
 
+It also updates the pipeline bar UI state:
+
+- Resets pipeline classes
+- Marks step 6 active
+- Applies a result class on step 6 based on backend verdict
+
 Verdict normalization:
 
 - The code calls `parseVerdict(data)`.
-- It supports verdict fields being either:
-  - top-level on the response object
-  - or nested under `data.verdict`
+- It reads verdict fields from the top-level backend response:
+  - `is_scam`
+  - `is_warning`
+  - `label`
 
 ### 3.10 UI renderer: `displayResults(tokens, hits, score, verdict)`
 
@@ -345,12 +390,31 @@ Key rule:
 Current behavior:
 
 - SCAM if `verdict.is_scam` is true
-- WARNING if `verdict.isWarning` is true
+- WARNING if `verdict.isWarning` is true (derived from backend `is_warning`)
 - SAFE otherwise
 
 Token display performance:
 
 - Token chips are capped at 50 items in the UI (with a `+X more` chip).
+
+Token highlighting:
+
+- Tokens are rendered by `renderTokens(tokens, hits)`.
+- It uses `hits` to assign token highlight classes (`hit-otp`, `hit-money`, `hit-urgency`, `hit-authority`) so the token chips visually match the detected feature categories.
+
+### 3.10.1 Token renderer: `renderTokens(tokens, hits)`
+
+Purpose:
+
+- Show token chips in `#tokenDisplay`.
+- Apply hit-based highlight classes when possible.
+- Keep the UI fast by limiting rendered chips to 50.
+
+High-level logic:
+
+- If there are no tokens, show placeholder text (`รอข้อความ...`).
+- Build a `tokenToCat` lookup using `hits` (token string → category).
+- Render token chips and add `hit-*` classes when a token is present in the lookup.
 
 ### 3.11 Hit chip renderer: `renderHitChips(elementId, matches)`
 
@@ -365,7 +429,29 @@ Purpose:
 
 - Keep simple client-side counters.
 - Update DOM elements:
-  - `stat-analyzed`, `stat-scam`, `stat-safe`, `stat-rate`
+  - `stat-analyzed`, `stat-scam`, `stat-warning`, `stat-safe`, `stat-rate`
+
+Current signature:
+
+- `updateStats(is_scam, is_warning)`
+
+Behavior:
+
+- Increments scam counter when `is_scam` is true
+- Otherwise increments warning counter when `is_warning` is true
+- Otherwise increments safe counter
+
+### 3.12.1 Dataset preview: `fetchAndRenderDataset()`, `renderDatasetTable(rows)`, `exportCSV()`
+
+Purpose:
+
+- Keep the Dataset (CSV Preview) table in sync with backend `GET /dataset`.
+
+Behavior:
+
+- `fetchAndRenderDataset()` fetches JSON rows from `API_BASE_URL + "/dataset"` and renders them.
+- `renderDatasetTable(rows)` populates `#csv-body` with table rows (or an empty state).
+- `exportCSV()` opens `API_BASE_URL + "/export"` in a new tab/window to download CSV.
 
 ### 3.13 Boot: `window.addEventListener("load", ...)`
 
@@ -377,18 +463,3 @@ Purpose:
   - `showSection("text")`
 
 ---
-
-## Renaming checklist (practical)
-
-If you rename any `id` or `class`, search all three files:
-
-- `thai_scam_detector.html`
-- `styles.css`
-- `script.js`
-
-Additionally, watch for dynamic IDs in `showSection()`:
-
-- `section + "Button"`
-- `section + "Section"`
-
-Those create implicit naming contracts.
